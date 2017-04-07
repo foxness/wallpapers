@@ -1,7 +1,7 @@
 require 'open-uri'
 
 RAW_SOURCE_URL = "https://www.reddit.com/r/wallpapers/top/.json?sort=top&t=day"
-SLIDESHOW_DIR = "/home/foxness/wallpaper/"
+SLIDESHOW_DIR = "$HOME/wallpaper/"
 
 WALLPAPER_FILENAME = "wallpaper"
 TEMP_FILENAME = "tmp"
