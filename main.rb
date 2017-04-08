@@ -5,10 +5,22 @@ WALLPAPER_PATH = File.expand_path "~/wallpaper/wallpaper"
 
 # -----------------------
 
-wallpapers = open(RAW_SOURCE_URL, &:read).scan /\"permalink\": \"(?<permalink>[^\"]+)\".+?\"url\": \"(?<url>[^\"]+)\"/
-url = wallpapers[0][1]
+def get_source(url)
+    open(url, &:read)
+end
 
-path = "#{WALLPAPER_PATH}.#{url.split('.')[-1]}"
+def get_wallpaper_info(source)
+    source.match /\"permalink\": \"(?<permalink>[^\"]+)\".+?\"url\": \"(?<url>[^\"]+)\"/
+end
+
+def get_image_url(url)
+    url.match(/imgur\.com\/\w+$/) ? get_source(url).match(/"image_src"\s+href="(?<url>[^"]+)"/)[:url] : url
+end
+
+wallpaper_info = get_wallpaper_info get_source(RAW_SOURCE_URL)
+image_url = get_image_url wallpaper_info[:url]
+
+path = "#{WALLPAPER_PATH}.#{image_url.split('.')[-1]}"
 
 changer_script =
 "
@@ -29,7 +41,7 @@ changer_command = "qdbus org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.ev
 temp = make_safe[`mktemp`.strip]
 old_path = make_safe[WALLPAPER_PATH + '.'] + '*'
 
-system("wget -q -O #{temp} #{url} " \
+system("wget -q -O #{temp} #{image_url} " \
     "&& rm -f #{old_path} " \
     "&& mv #{temp} #{make_safe[path]} " \
     "&& #{changer_command}")
