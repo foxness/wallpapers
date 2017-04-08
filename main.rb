@@ -1,33 +1,34 @@
 require 'open-uri'
 
 RAW_SOURCE_URL = "https://www.reddit.com/r/wallpapers/top/.json?sort=top&t=day"
-SLIDESHOW_DIR = File.expand_path "~/wallpaper"
-SLIDESHOW_DELAY = 60 # seconds
+WALLPAPER_PATH = File.expand_path "~/wallpaper/wallpaper"
 
 # -----------------------
-
-current_wallpaper = Dir.glob(File.join SLIDESHOW_DIR, '*') \
-                    .map { |path| File.basename path }
-                    .select { |name| name[1] == '.' } \
-                    .first
-
-fail 'no current wallpaper found' if current_wallpaper.nil?
 
 wallpapers = open(RAW_SOURCE_URL, &:read).scan /\"permalink\": \"(?<permalink>[^\"]+)\".+?\"url\": \"(?<url>[^\"]+)\"/
 url = wallpapers[0][1]
 
-tick = current_wallpaper.nil? ? '2' : current_wallpaper[0]
-tock = (tick.to_i % 2 + 1).to_s
+make_safe = lambda { |path| "\"#{path}\"" }
 
-pathify = lambda { |path| "\"#{File.join SLIDESHOW_DIR, path}\"" }
+path = "#{WALLPAPER_PATH}.#{url.split('.')[-1]}"
 
-temp = pathify['tmp']
-new_wallpaper = pathify["#{tock}.#{url.split('.')[-1]}"]
-current_wallpaper = pathify[current_wallpaper]
+changer_script =
+"
+allDesktops = desktops();
+for (i = 0; i < allDesktops.length; ++i)
+{
+    d = allDesktops[i];
+    d.wallpaperPlugin = \"org.kde.image\";
+    d.currentConfigGroup = Array(\"Wallpaper\", \"org.kde.image\", \"General\");
+    d.writeConfig(\"Image\", \"file://#{path}\")
+}
+"
 
-cmds = "wget -q -O #{temp} #{url} " \
-    "&& mv #{temp} #{new_wallpaper} " \
-    "&& sleep #{SLIDESHOW_DELAY + 3} " \
-    "&& rm -f #{current_wallpaper}"
+changer_command = "qdbus org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript '#{changer_script}'";
 
-`#{cmds}`
+temp = make_safe[`mktemp`.strip]
+
+system("wget -q -O #{temp} #{url} " \
+    "&& rm -rf #{make_safe[File.join File.dirname(WALLPAPER_PATH), '*']} " \
+    "&& mv #{temp} #{make_safe[path]} " \
+    "&& #{changer_command}")
