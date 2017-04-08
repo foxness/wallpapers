@@ -3,6 +3,9 @@ require 'open-uri'
 RAW_SOURCE_URL = "https://www.reddit.com/r/wallpapers/top/.json?sort=top&t=day"
 WALLPAPER_PATH = File.expand_path "~/wallpaper/wallpaper"
 
+NOTIFICATION_TIME = 9 # seconds
+NOTIFICATION_NAME = "wallpapers"
+
 # -----------------------
 
 def get_source(url)
@@ -42,7 +45,7 @@ def get_changer_command(wallpaper_path)
 end
 
 def run(commands)
-    system(commands.join " && ")
+    system commands.join(" && ")
 end
 
 wallpaper_info = get_wallpaper_info get_source(RAW_SOURCE_URL)
@@ -57,5 +60,6 @@ run \
     "wget -q -O #{temp_path} #{image_url}",
     "rm -f #{old_path}",
     "mv #{temp_path} #{make_safe wallpaper_path}",
-    get_changer_command(wallpaper_path)
+    get_changer_command(wallpaper_path),
+    "notify-send -t #{NOTIFICATION_TIME * 1000} -a #{make_safe NOTIFICATION_NAME} \"wallpaper changed\""
 ])
