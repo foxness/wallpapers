@@ -73,7 +73,7 @@ def main
         changer_command(wallpaper_path),
         notification_command("Wallpaper changed")
     ])
-    fail 'error bois'
+    
     log wallpaper_info[:permalink]
 rescue => e
     log "#{e.class}: #{e.message} at #{__FILE__}:#{__LINE__}\n" \
