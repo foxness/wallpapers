@@ -8,8 +8,6 @@ WALLPAPER_PATH = File.expand_path "~/wallpaper/wallpaper"
 wallpapers = open(RAW_SOURCE_URL, &:read).scan /\"permalink\": \"(?<permalink>[^\"]+)\".+?\"url\": \"(?<url>[^\"]+)\"/
 url = wallpapers[0][1]
 
-make_safe = lambda { |path| "\"#{path}\"" }
-
 path = "#{WALLPAPER_PATH}.#{url.split('.')[-1]}"
 
 changer_script =
@@ -24,11 +22,14 @@ for (i = 0; i < allDesktops.length; ++i)
 }
 "
 
-changer_command = "qdbus org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript '#{changer_script}'";
+make_safe = lambda { |path| "'#{path}'" } # the quote has to be ' because the changer script uses "
+
+changer_command = "qdbus org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript #{make_safe[changer_script]}";
 
 temp = make_safe[`mktemp`.strip]
+old_path = make_safe[WALLPAPER_PATH + '.'] + '*'
 
 system("wget -q -O #{temp} #{url} " \
-    "&& rm -rf #{make_safe[File.join File.dirname(WALLPAPER_PATH), '*']} " \
+    "&& rm -f #{old_path} " \
     "&& mv #{temp} #{make_safe[path]} " \
     "&& #{changer_command}")
