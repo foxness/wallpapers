@@ -15,11 +15,24 @@ def get_source(url)
 end
 
 def get_wallpaper_info(source)
-    source.match /\"permalink\": \"(?<permalink>[^\"]+)\".+?\"url\": \"(?<url>[^\"]+)\"/
+    source.match /"permalink": "(?<permalink>[^"]+)".+?"url": "(?<url>[^"]+)"/
+end
+
+def unescape(s)
+    eval %Q{"#{s}"} # so vulnerable :>
 end
 
 def get_image_url(url)
-    url.match(/imgur\.com\/\w+$/) ? get_source(url).match(/"image_src"\s+href="(?<url>[^"]+)"/)[:url] : url
+    case url
+    when /imgur\.com\/\w+$/
+        unescape get_source(url).match(/"image_src"\s+href="(?<url>[^"]+)"/)[:url]
+    when /imgur\.com\/a\/(?<id>\w+)$/
+        unescape(get_source("https://api.imgur.com/3/album/#{$~[:id]}") \
+        .scan(/"link":"(?<link>[^"]+)"/) \
+        .drop(1).sample.first)
+    else
+        url
+    end
 end
 
 def make_safe(path)
@@ -31,7 +44,7 @@ def add_image_extension(path, image_url)
 end
 
 def changer_command(wallpaper_path)
-    changer_script = %Q{
+    changer_script = %Q~
 
     allDesktops = desktops();
     for (i = 0; i < allDesktops.length; ++i)
@@ -42,7 +55,7 @@ def changer_command(wallpaper_path)
         d.writeConfig("Image", "file://#{wallpaper_path}")
     }
 
-    }
+    ~
     
     "qdbus org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript #{make_safe changer_script}"
 end
@@ -77,8 +90,10 @@ def main
     ])
     
     log wallpaper_info[:permalink]
-rescue => e
-    log "#{e.class}: #{e.message} at #{__FILE__}:#{__LINE__}\n" \
+rescue
+    log "ERROR:\n" \
+        "#{$!.class} - #{$!}\n" \
+        "backtrace: #{$!.backtrace.join "\n\t"}\n" \
         "wallpaper_info: #{wallpaper_info.inspect}\n" \
         "image_url: #{image_url.inspect}"
     
