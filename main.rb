@@ -1,4 +1,5 @@
-require 'open-uri'
+require 'net/http'
+require 'uri'
 
 RAW_SOURCE_URL = "https://www.reddit.com/r/wallpapers/top/.json?sort=top&t=day"
 WALLPAPER_PATH = File.expand_path "~/wallpaper/wallpaper"
@@ -10,7 +11,7 @@ NOTIFICATION_NAME = "Wallpapers"
 # -----------------------
 
 def get_source(url)
-    open(url, &:read)
+    Net::HTTP.get URI.parse(url)
 end
 
 def get_wallpaper_info(source)
@@ -30,17 +31,18 @@ def add_image_extension(path, image_url)
 end
 
 def changer_command(wallpaper_path)
-    changer_script =
-    "
+    changer_script = %Q{
+
     allDesktops = desktops();
     for (i = 0; i < allDesktops.length; ++i)
     {
         d = allDesktops[i];
-        d.wallpaperPlugin = \"org.kde.image\";
-        d.currentConfigGroup = Array(\"Wallpaper\", \"org.kde.image\", \"General\");
-        d.writeConfig(\"Image\", \"file://#{wallpaper_path}\")
+        d.wallpaperPlugin = "org.kde.image";
+        d.currentConfigGroup = Array("Wallpaper", "org.kde.image", "General");
+        d.writeConfig("Image", "file://#{wallpaper_path}")
     }
-    "
+
+    }
     
     "qdbus org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript #{make_safe changer_script}"
 end
@@ -80,7 +82,7 @@ rescue => e
         "wallpaper_info: #{wallpaper_info.inspect}\n" \
         "image_url: #{image_url.inspect}"
     
-    system notification_command('Encountered an error! See log at #{LOG_PATH}')
+    system notification_command("Encountered an error! See log at #{LOG_PATH}")
 end
 
 main
