@@ -22,7 +22,7 @@ end
 
 def get_wallpaper_info(src)
     m = src.match /"permalink": "(?<permalink>[^"]+)".+?"url": "(?<url>[^"]+)"/
-    { permalink: unescape(m[:permalink]), url: unescape(m[:url]) }
+    { permalink: "https://www.reddit.com" + unescape(m[:permalink]), url: unescape(m[:url]) }
 end
 
 def unescape(s)
@@ -94,7 +94,7 @@ def main
     `#{changer_command new_path}`
     `#{notification_command "Wallpaper changed"}`
     
-    log wallpaper_info[:permalink]
+    log wallpaper_info[:permalink] + " " + image_url
 rescue
     log "ERROR:\n" \
         "#{$!.class} - #{$!}\n" \
