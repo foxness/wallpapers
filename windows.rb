@@ -2,11 +2,12 @@ require 'net/http'
 require 'uri'
 require 'open-uri'
 require 'Win32API'
+require 'date'
 
 RAW_SOURCE_URL = "https://www.reddit.com/r/wallpapers/top/.json?sort=top&t=day"
 WALLPAPER_DIR = 'L:\Wallpapers'
 WALLPAPER_BASENAME = 'wallpaper'
-LOG_FILE = 'wallpapers.log'
+LOG_PATH = File.join WALLPAPER_DIR, 'wallpapers.log'
 
 TOO_MANY_REQUESTS_TIMEOUT = 10 # seconds
 
@@ -58,12 +59,17 @@ def set_wallpaper(path)
     systemParametersInfo.call(SPI_SETDESKWALLPAPER, 0, path, SPIF_UPDATEINIFILE | SPIF_SENDWININICHANGE)
 end
 
+def log(text)
+    open(LOG_PATH, 'a') { |log| log.puts "[#{Time.now.strftime "%Y/%m/%d %H:%M"}] #{text}" }
+end
+
 def main
     wallpaper_info = get_wallpaper_info get_source(RAW_SOURCE_URL)
     image_url = get_image_url wallpaper_info[:url]
     
     path = download image_url
     set_wallpaper path
+    log "#{wallpaper_info[:permalink]} #{image_url}"
 end
 
 main
