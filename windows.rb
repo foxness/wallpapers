@@ -1,5 +1,3 @@
-require 'net/http'
-require 'uri'
 require 'open-uri'
 require 'Win32API'
 require 'date'
@@ -19,7 +17,7 @@ SPIF_SENDWININICHANGE = 0x2
 
 def get_source(url)
     loop do
-        src = Net::HTTP.get(URI.parse(url))
+        src = URI.parse(url).read
         return src unless src[13, 17] == "Too Many Requests"
         sleep TOO_MANY_REQUESTS_TIMEOUT
     end
